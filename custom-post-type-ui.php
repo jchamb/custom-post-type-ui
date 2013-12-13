@@ -62,6 +62,7 @@ function cpt_plugin_menu() {
 	add_submenu_page( 'cpt_main_menu', __( 'Add New', 'cpt-plugin' ), __( 'Add New', 'cpt-plugin' ), 'manage_options', 'cpt_sub_add_new', 'cpt_add_new' );
 	add_submenu_page( 'cpt_main_menu', __( 'Manage Post Types', 'cpt-plugin' ), __( 'Manage Post Types', 'cpt-plugin' ), 'manage_options', 'cpt_sub_manage_cpt', 'cpt_manage_cpt' );
 	add_submenu_page( 'cpt_main_menu', __( 'Manage Taxonomies', 'cpt-plugin' ), __( 'Manage Taxonomies', 'cpt-plugin' ), 'manage_options', 'cpt_sub_manage_taxonomies', 'cpt_manage_taxonomies' );
+	add_submenu_page( 'cpt_main_menu', __( 'Import/Export', 'cpt-plugin' ), __( 'Import/Export', 'cpt-plugin' ), 'manage_options', 'cpt_sub_import_export', 'cpt_import_export' );
 
 	//require_once( plugin_dir_path( __FILE__ ) . 'inc/post-types.php' );
 	//require_once( plugin_dir_path( __FILE__ ) . 'inc/taxonomies.php' );
@@ -588,6 +589,61 @@ function cpt_settings() {
 
 		<?php do_action( 'cptui_main_page_after_rss' ); ?>
 		</div>
+	</div>
+<?php
+//load footer
+cpt_footer();
+}
+
+function cpt_import_export() {
+	global $CPT_URL, $wp_post_types;
+
+	$RETURN_URL = ( isset( $_GET['return'] ) ) ? 'action="' . cpt_check_return( esc_attr( $_GET['return'] ) ) . '"' : '';
+
+  if(isset($_POST['import']))
+  {
+//		check_admin_referer('cpt_import');
+	$data = trim($_POST['import']);
+	$data = stripslashes_deep($data);
+	$settings = json_decode($data,true);
+	if($settings)
+	{
+	  $settings = array_values($settings);
+			update_option( 'cpt_custom_post_types', $settings );
+	}
+  }
+	//flush rewrite rules
+	flush_rewrite_rules();
+?>
+	<div class="wrap">
+		<?php screen_icon( 'plugins' ); ?>
+		<h2><?php _e( 'Import/Export', 'cpt-plugin' ); ?> </h2>
+
+		<h2><?php _e( 'Import', 'cpt-plugin' ); ?></h2>
+		<p><?php _e( 'To import custom post types, paste the JSON text shown from a previous export', 'cpt-plugin' ); ?>
+		<form method="post" <?php echo $RETURN_URL; ?>>
+			<?php
+			if ( function_exists( 'wp_nonce_field' ) )
+				wp_nonce_field( 'cpt_import' );
+			?>
+	  <p>
+		<textarea name="import" style="width: 300px; height: 200px">
+		</textarea>
+	  </p>
+	  <p>
+		<input type="submit" value="Import"/>
+	  </p>
+	</form>
+		<h2><?php _e( 'Export', 'cpt-plugin' ); ?></h2>
+		<p><?php _e( 'The following is a JSON export of your current CPT settings. Copy this information to a different installation or simply save it for backup purposes.', 'cpt-plugin' ); ?>
+	<p>
+	  <?php
+		$cpt_post_types = get_option( 'cpt_custom_post_types', array() );
+		$json = json_encode($cpt_post_types);
+
+	  ?>
+	  <textarea style="width: 300px; height: 200px"><?php echo(esc_html($json))?></textarea>
+	</p>
 	</div>
 <?php
 //load footer
